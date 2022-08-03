@@ -1,6 +1,7 @@
 package com.twilio.twilio_voice;
 
 import android.Manifest;
+import android.app.ActivityManager;
 import android.app.KeyguardManager;
 import android.app.NotificationManager;
 import android.content.BroadcastReceiver;
@@ -24,11 +25,15 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+import androidx.lifecycle.Lifecycle;
+import androidx.lifecycle.ProcessLifecycleOwner;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 import com.twilio.voice.Call;
 import com.twilio.voice.CallException;
 import com.twilio.voice.CallInvite;
+
+import java.util.List;
 
 
 public class AnswerJavaActivity extends AppCompatActivity {
@@ -69,7 +74,7 @@ public class AnswerJavaActivity extends AppCompatActivity {
         voiceBroadcastReceiver = new VoiceBroadcastReceiver();
         registerReceiver();
 
-        Log.d(TAG, "isKeyguardUp $isKeyguardUp");
+        Log.d(TAG, "isKeyguardUp " + isKeyguardUp);
         if (isKeyguardUp) {
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
@@ -114,7 +119,12 @@ public class AnswerJavaActivity extends AppCompatActivity {
                     checkPermissionsAndAccept();
                     break;
                 case Constants.ACTION_END_CALL:
-                    Log.d(TAG, "ending call" + activeCall != null ? "TRue" : "False");
+                    Log.d(TAG, "ending call" + activeCall != null ? "True" : "False");
+                    if (activeCall == null) {
+                        Log.d(TAG, "No active call to end. Returning");
+                        finish();
+                        break;
+                    }
                     activeCall.disconnect();
                     initiatedDisconnect = true;
                     finish();
@@ -183,7 +193,6 @@ public class AnswerJavaActivity extends AppCompatActivity {
         }
     }
 
-
     private void acceptCall() {
         Log.d(TAG, "Accepting call");
         Intent acceptIntent = new Intent(this, IncomingCallNotificationService.class);
@@ -192,14 +201,30 @@ public class AnswerJavaActivity extends AppCompatActivity {
         acceptIntent.putExtra(Constants.ACCEPT_CALL_ORIGIN, 1);
         acceptIntent.putExtra(Constants.INCOMING_CALL_NOTIFICATION_ID, activeCallNotificationId);
         Log.d(TAG, "Clicked accept startService");
+
         startService(acceptIntent);
-        if (TwilioVoicePlugin.hasStarted) {
+        Log.d(TAG, "TwilioVoicePlugin hasStarted: " + TwilioVoicePlugin.hasStarted);
+        if (!isLocked() && isAppVisible()) {
+        //if (TwilioVoicePlugin.hasStarted) {
             finish();
         } else {
             Log.d(TAG, "Answering call");
             activeCallInvite.accept(this, callListener);
             notificationManager.cancel(activeCallNotificationId);
         }
+    }
+
+    private boolean isLocked() {
+        KeyguardManager myKM = (KeyguardManager) getSystemService(Context.KEYGUARD_SERVICE);
+        return myKM.inKeyguardRestrictedInputMode();
+    }
+
+    private boolean isAppVisible() {
+        return ProcessLifecycleOwner
+                .get()
+                .getLifecycle()
+                .getCurrentState()
+                .isAtLeast(Lifecycle.State.STARTED);
     }
 
     private void startAnswerActivity(Call call) {
@@ -280,6 +305,7 @@ public class AnswerJavaActivity extends AppCompatActivity {
                     case Constants.ACTION_INCOMING_CALL:
                     case Constants.ACTION_CANCEL_CALL:
                     case Constants.ACTION_TOGGLE_MUTE:
+                    case Constants.ACTION_ACCEPT:
                     case Constants.ACTION_END_CALL:
                         /*
                          * Handle the incoming or cancelled call invite
