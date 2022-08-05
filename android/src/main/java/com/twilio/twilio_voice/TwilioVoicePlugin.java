@@ -59,6 +59,7 @@ public class TwilioVoicePlugin implements FlutterPlugin, MethodChannel.MethodCal
     public static final String TwilioPreferences = "com.twilio.twilio_voicePreferences";
     private static final int MIC_PERMISSION_REQUEST_CODE = 1;
     static boolean hasStarted = false;
+    static boolean isOnForeground = false;
 
     private String accessToken;
     private AudioManager audioManager;
@@ -373,6 +374,10 @@ public class TwilioVoicePlugin implements FlutterPlugin, MethodChannel.MethodCal
         this.eventSink = null;
     }
 
+    public Boolean isForegrounded() {
+        return this.isOnForeground;
+    }
+
     @Override
     public void onMethodCall(@NonNull MethodCall call, @NonNull Result result) {
         if (call.method.equals("tokens")) {
@@ -520,10 +525,14 @@ public class TwilioVoicePlugin implements FlutterPlugin, MethodChannel.MethodCal
                 activity.startActivity(localIntent);
             }
             result.success(true);
+        } else if (call.method.equals("setForeground")) {
+            this.isOnForeground = call.argument("foreground");
+            result.success(true);
         } else {
             result.notImplemented();
         }
     }
+
 
     /*
      * Accept an incoming Call

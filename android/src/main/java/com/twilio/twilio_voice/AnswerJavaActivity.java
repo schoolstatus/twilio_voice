@@ -1,7 +1,6 @@
 package com.twilio.twilio_voice;
 
 import android.Manifest;
-import android.app.ActivityManager;
 import android.app.KeyguardManager;
 import android.app.NotificationManager;
 import android.content.BroadcastReceiver;
@@ -25,15 +24,11 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
-import androidx.lifecycle.Lifecycle;
-import androidx.lifecycle.ProcessLifecycleOwner;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 import com.twilio.voice.Call;
 import com.twilio.voice.CallException;
 import com.twilio.voice.CallInvite;
-
-import java.util.List;
 
 
 public class AnswerJavaActivity extends AppCompatActivity {
@@ -42,8 +37,8 @@ public class AnswerJavaActivity extends AppCompatActivity {
     public static final String TwilioPreferences = "com.twilio.twilio_voicePreferences";
 
     private NotificationManager notificationManager;
-    private boolean isReceiverRegistered = false;
-    private VoiceBroadcastReceiver voiceBroadcastReceiver;
+    /*private boolean isReceiverRegistered = false;*/
+    /*private VoiceBroadcastReceiver voiceBroadcastReceiver;*/
 
     private boolean initiatedDisconnect = false;
 
@@ -71,10 +66,10 @@ public class AnswerJavaActivity extends AppCompatActivity {
         boolean isKeyguardUp = kgm.inKeyguardRestrictedInputMode();
 
         notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-        voiceBroadcastReceiver = new VoiceBroadcastReceiver();
-        registerReceiver();
+/*        voiceBroadcastReceiver = new VoiceBroadcastReceiver();
+        registerReceiver();*/
 
-        Log.d(TAG, "isKeyguardUp " + isKeyguardUp);
+        Log.d(TAG, "isKeyguardUp $isKeyguardUp");
         if (isKeyguardUp) {
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
@@ -193,6 +188,7 @@ public class AnswerJavaActivity extends AppCompatActivity {
         }
     }
 
+
     private void acceptCall() {
         Log.d(TAG, "Accepting call");
         Intent acceptIntent = new Intent(this, IncomingCallNotificationService.class);
@@ -201,11 +197,9 @@ public class AnswerJavaActivity extends AppCompatActivity {
         acceptIntent.putExtra(Constants.ACCEPT_CALL_ORIGIN, 1);
         acceptIntent.putExtra(Constants.INCOMING_CALL_NOTIFICATION_ID, activeCallNotificationId);
         Log.d(TAG, "Clicked accept startService");
-
         startService(acceptIntent);
-        Log.d(TAG, "TwilioVoicePlugin hasStarted: " + TwilioVoicePlugin.hasStarted);
-        if (!isLocked() && isAppVisible()) {
-        //if (TwilioVoicePlugin.hasStarted) {
+        if (!isLocked() && TwilioVoicePlugin.isOnForeground) {
+        /*if (TwilioVoicePlugin.hasStarted) {*/
             finish();
         } else {
             Log.d(TAG, "Answering call");
@@ -217,14 +211,6 @@ public class AnswerJavaActivity extends AppCompatActivity {
     private boolean isLocked() {
         KeyguardManager myKM = (KeyguardManager) getSystemService(Context.KEYGUARD_SERVICE);
         return myKM.inKeyguardRestrictedInputMode();
-    }
-
-    private boolean isAppVisible() {
-        return ProcessLifecycleOwner
-                .get()
-                .getLifecycle()
-                .getCurrentState()
-                .isAtLeast(Lifecycle.State.STARTED);
     }
 
     private void startAnswerActivity(Call call) {
@@ -293,7 +279,7 @@ public class AnswerJavaActivity extends AppCompatActivity {
         };
     }
 
-    private class VoiceBroadcastReceiver extends BroadcastReceiver {
+/*    private class VoiceBroadcastReceiver extends BroadcastReceiver {
 
         @Override
         public void onReceive(Context context, Intent intent) {
@@ -305,11 +291,10 @@ public class AnswerJavaActivity extends AppCompatActivity {
                     case Constants.ACTION_INCOMING_CALL:
                     case Constants.ACTION_CANCEL_CALL:
                     case Constants.ACTION_TOGGLE_MUTE:
-                    case Constants.ACTION_ACCEPT:
                     case Constants.ACTION_END_CALL:
-                        /*
+                        *//*
                          * Handle the incoming or cancelled call invite
-                         */
+                         *//*
                         Log.d(TAG, "received intent to answerActivity");
                         handleIncomingCallIntent(intent);
                         break;
@@ -319,9 +304,9 @@ public class AnswerJavaActivity extends AppCompatActivity {
 
                 }
         }
-    }
+    }*/
 
-    private void registerReceiver() {
+/*    private void registerReceiver() {
         Log.d(TAG, "Registering answerJavaActivity receiver");
         if (!isReceiverRegistered) {
             IntentFilter intentFilter = new IntentFilter();
@@ -332,21 +317,21 @@ public class AnswerJavaActivity extends AppCompatActivity {
                     voiceBroadcastReceiver, intentFilter);
             isReceiverRegistered = true;
         }
-    }
+    }*/
 
-    private void unregisterReceiver() {
+/*    private void unregisterReceiver() {
         Log.d(TAG, "Unregistering receiver");
         if (isReceiverRegistered) {
             LocalBroadcastManager.getInstance(this).unregisterReceiver(voiceBroadcastReceiver);
             isReceiverRegistered = false;
         }
-    }
+    }*/
 
 
     @Override
     protected void onResume() {
         super.onResume();
-        registerReceiver();
+        /*registerReceiver();*/
     }
 
     // We still want to listen messages from backgroundCallJavaActivity
