@@ -16,9 +16,16 @@ public class IncomingCallNotificationActivity extends AppCompatActivity {
         Log.d(TAG, "onCreate");
 
         Intent srcIntent = getIntent();
+        String action = srcIntent.getAction();
+        Log.d(TAG, "onCreate " + action);
         Intent newIntent = new Intent(getApplicationContext(), IncomingCallNotificationService.class);
+        newIntent.setAction(action);
         newIntent.putExtras(srcIntent);
-        startService(newIntent);
+
+        Log.d(TAG, "startForegroundService");
+        startForegroundService(newIntent);
+
+        Log.d(TAG, "Finish");
         finish();
     }
 }
