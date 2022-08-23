@@ -2,6 +2,8 @@ library twilio_voice;
 
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
 
 part 'models/active_call.dart';
@@ -19,6 +21,7 @@ class TwilioVoice {
 
   static final TwilioVoice _instance = TwilioVoice._();
   static TwilioVoice get instance => _instance;
+  final deviceToken = ValueNotifier<String?>(null);
 
   late final Call call;
 
@@ -37,6 +40,17 @@ class TwilioVoice {
   OnDeviceTokenChanged? deviceTokenChanged;
   void setOnDeviceTokenChanged(OnDeviceTokenChanged deviceTokenChanged) {
     deviceTokenChanged = deviceTokenChanged;
+  }
+
+  Future<bool?> loadDeviceToken() {
+    return _channel.invokeMethod('loadDeviceToken', <String, dynamic>{});
+  }
+
+  // Android only for TwilioVoicePlugin.java
+  Future<void> setAppHasStarted({required bool appHasStarted}) async {
+    if (Platform.isAndroid) {
+      await _channel.invokeMethod('setAppHasStarted', <String, dynamic>{"appHasStarted": appHasStarted});
+    }
   }
 
   /// register fcm token, and device token for android
@@ -121,10 +135,11 @@ class TwilioVoice {
   CallEvent _parseCallEvent(String state) {
     if (state.startsWith("DEVICETOKEN|")) {
       var token = state.split('|')[1];
+      deviceToken.value = token;
       if (deviceTokenChanged != null) {
         deviceTokenChanged!(token);
       }
-      return CallEvent.log;
+      return CallEvent.iosDeviceToken;
     } else if (state.startsWith("LOG|")) {
       List<String> tokens = state.split('|');
       print(tokens[1]);
@@ -135,7 +150,7 @@ class TwilioVoice {
         return CallEvent.declined;
       } else if (tokens.toString().toLowerCase().contains("call rejected")) {
         // Android call reject from string: "LOG|Call Rejected"
-      call._activeCall = null;
+        call._activeCall = null;
         return CallEvent.declined;
       } else if (tokens.toString().toLowerCase().contains("rejecting call")) {
         // iOS call reject froms tring: "LOG|provider:performEndCallAction: rejecting call"
@@ -256,6 +271,12 @@ class Call {
   Future<bool> isOnCall() {
     return _channel.invokeMethod<bool?>('isOnCall',
         <String, dynamic>{}).then<bool>((bool? value) => value ?? false);
+  }
+
+  /// Gets the active call's SID. This will be null until the first Ringing event occurs
+  Future<String?> getSid() {
+    return _channel.invokeMethod<String?>('call-sid',
+        <String, dynamic>{}).then<String?>((String? value) => value);
   }
 
   /// Answers incoming call
