@@ -217,6 +217,7 @@ public class TwilioVoicePlugin implements FlutterPlugin, MethodChannel.MethodCal
 
     private void handleReject() {
         sendPhoneCallEvents("LOG|Call Rejected");
+
     }
 
     private void handleCancel() {
