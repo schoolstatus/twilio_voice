@@ -37,6 +37,8 @@ public class IncomingCallNotificationService extends Service {
         if (action != null) {
             CallInvite callInvite = intent.getParcelableExtra(Constants.INCOMING_CALL_INVITE);
             int notificationId = intent.getIntExtra(Constants.INCOMING_CALL_NOTIFICATION_ID, 0);
+            Log.i(TAG, "onStartCommand notificationId" + notificationId);
+            Log.i(TAG, "is callInvite null: " + (callInvite != null));
             switch (action) {
                 case Constants.ACTION_INCOMING_CALL:
                     handleIncomingCall(callInvite, notificationId);
@@ -74,7 +76,7 @@ public class IncomingCallNotificationService extends Service {
         intent.putExtra(Constants.INCOMING_CALL_NOTIFICATION_ID, notificationId);
         intent.putExtra(Constants.INCOMING_CALL_INVITE, callInvite);
         intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-        PendingIntent pendingIntent = PendingIntent.getActivity(this, notificationId, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+        PendingIntent pendingIntent = PendingIntent.getActivity(this, notificationId, intent, PendingIntent.FLAG_UPDATE_CURRENT |  PendingIntent.FLAG_IMMUTABLE);
         /*
          * Pass the notification id and call sid to use as an identifier to cancel the
          * notification later
@@ -88,8 +90,9 @@ public class IncomingCallNotificationService extends Service {
         String fromId = callInvite.getFrom().replace("client:", "");
         String caller = preferences.getString(fromId, preferences.getString("defaultCaller", "Unknown caller"));
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            Log.i(TAG, "building notification for new phones");
+         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            // Version O = Android 8
+            Log.i(TAG, "building notification for Android 8+");
             return buildNotification(getApplicationName(context), getString(R.string.new_call, caller),
                     pendingIntent,
                     extras,
@@ -140,14 +143,28 @@ public class IncomingCallNotificationService extends Service {
         rejectIntent.setAction(Constants.ACTION_REJECT);
         rejectIntent.putExtra(Constants.INCOMING_CALL_INVITE, callInvite);
         rejectIntent.putExtra(Constants.INCOMING_CALL_NOTIFICATION_ID, notificationId);
-        PendingIntent piRejectIntent = PendingIntent.getService(getApplicationContext(), 0, rejectIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+        PendingIntent piRejectIntent = PendingIntent.getService(getApplicationContext(), 0, rejectIntent, PendingIntent.FLAG_UPDATE_CURRENT |  PendingIntent.FLAG_IMMUTABLE);
 
-        Intent acceptIntent = new Intent(getApplicationContext(), IncomingCallNotificationService.class);
-        acceptIntent.setAction(Constants.ACTION_ACCEPT);
-        acceptIntent.putExtra(Constants.ACCEPT_CALL_ORIGIN, 0);
-        acceptIntent.putExtra(Constants.INCOMING_CALL_INVITE, callInvite);
-        acceptIntent.putExtra(Constants.INCOMING_CALL_NOTIFICATION_ID, notificationId);
-        PendingIntent piAcceptIntent = PendingIntent.getService(getApplicationContext(), 0, acceptIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+        Intent acceptIntent;
+        PendingIntent piAcceptIntent;
+        // VERSION S = Android 12
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            Log.i(TAG, "building acceptIntent for Android 12+");
+            acceptIntent = new Intent(getApplicationContext(), IncomingCallNotificationActivity.class);
+            acceptIntent.setAction(Constants.ACTION_ACCEPT);
+            acceptIntent.putExtra(Constants.ACCEPT_CALL_ORIGIN, 0);
+            acceptIntent.putExtra(Constants.INCOMING_CALL_INVITE, callInvite);
+            acceptIntent.putExtra(Constants.INCOMING_CALL_NOTIFICATION_ID, notificationId);
+            piAcceptIntent = PendingIntent.getActivity(getApplicationContext(), 0, acceptIntent, PendingIntent.FLAG_UPDATE_CURRENT |  PendingIntent.FLAG_IMMUTABLE);
+        }
+        else {
+            acceptIntent = new Intent(getApplicationContext(), IncomingCallNotificationService.class);
+            acceptIntent.setAction(Constants.ACTION_ACCEPT);
+            acceptIntent.putExtra(Constants.ACCEPT_CALL_ORIGIN, 0);
+            acceptIntent.putExtra(Constants.INCOMING_CALL_INVITE, callInvite);
+            acceptIntent.putExtra(Constants.INCOMING_CALL_NOTIFICATION_ID, notificationId);
+            piAcceptIntent = PendingIntent.getService(getApplicationContext(), 0, acceptIntent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+        }
 
         long[] mVibratePattern = new long[]{0, 400, 400, 400, 400, 400, 400, 400};
         Notification.Builder builder =
@@ -193,7 +210,7 @@ public class IncomingCallNotificationService extends Service {
         endForeground();
         Log.i(TAG, "accept call invite!");
         SoundPoolManager.getInstance(this).stopRinging();
-
+        Log.i(TAG, "IsAppVisible: " + isAppVisible() + " Origin: " + origin);
         Intent activeCallIntent;
         if (origin == 0 && !isAppVisible()) {
             Log.i(TAG, "Creating answerJavaActivity intent");
@@ -209,6 +226,7 @@ public class IncomingCallNotificationService extends Service {
         activeCallIntent.putExtra(Constants.INCOMING_CALL_NOTIFICATION_ID, notificationId);
         activeCallIntent.putExtra(Constants.ACCEPT_CALL_ORIGIN, origin);
         activeCallIntent.setAction(Constants.ACTION_ACCEPT);
+        Log.i(TAG, "Launch IsAppVisible: " + isAppVisible() + " Origin: " + origin);
         if (origin == 0 && !isAppVisible()) {
             startActivity(activeCallIntent);
             Log.i(TAG, "starting activity");
@@ -265,12 +283,11 @@ public class IncomingCallNotificationService extends Service {
         returnCallIntent.setAction(Constants.ACTION_RETURN_CALL);
         returnCallIntent.putExtra(Constants.CALL_TO, to);
         returnCallIntent.putExtra(Constants.CALL_FROM, callerId);
-        PendingIntent piReturnCallIntent = PendingIntent.getService(getApplicationContext(), 0, returnCallIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+        PendingIntent piReturnCallIntent = PendingIntent.getService(getApplicationContext(), 0, returnCallIntent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
 
 
         Notification notification;
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             NotificationCompat.Builder builder =
                     new NotificationCompat.Builder(this, createChannel(NotificationManager.IMPORTANCE_HIGH))
 
