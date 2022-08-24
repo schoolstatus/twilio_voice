@@ -150,6 +150,7 @@ class TwilioVoice {
         return CallEvent.declined;
       } else if (tokens.toString().toLowerCase().contains("call rejected")) {
         // Android call reject from string: "LOG|Call Rejected"
+        call._activeCall = null;
         return CallEvent.declined;
       } else if (tokens.toString().toLowerCase().contains("rejecting call")) {
         // iOS call reject froms tring: "LOG|provider:performEndCallAction: rejecting call"
