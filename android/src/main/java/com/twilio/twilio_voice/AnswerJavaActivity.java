@@ -239,7 +239,7 @@ public class AnswerJavaActivity extends AppCompatActivity {
             intent.setAction(Constants.ACTION_CANCEL_CALL);
 
             this.startActivity(intent);
-            finish();
+            finishAndRemoveTask();
         }
 
     }
