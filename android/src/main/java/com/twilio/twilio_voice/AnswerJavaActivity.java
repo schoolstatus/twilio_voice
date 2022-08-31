@@ -144,6 +144,13 @@ public class AnswerJavaActivity extends AppCompatActivity {
                 case Constants.ACTION_CANCEL_CALL:
                     newCancelCallClickListener();
                     break;
+                case Constants.ACTION_ACCEPT:
+                    Intent backgroundCallIntent = new Intent(this, BackgroundCallJavaActivity.class);
+                    backgroundCallIntent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
+                    backgroundCallIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    backgroundCallIntent.putExtra(Constants.CALL_FROM, "SchoolStatus");
+                    startActivity(backgroundCallIntent);
+                    Log.d(TAG, "Connected");
                 default: {
                 }
             }
@@ -198,6 +205,7 @@ public class AnswerJavaActivity extends AppCompatActivity {
         acceptIntent.putExtra(Constants.INCOMING_CALL_NOTIFICATION_ID, activeCallNotificationId);
         Log.d(TAG, "Clicked accept startService");
         startService(acceptIntent);
+        Log.d(TAG, "!isLocked(): " + !isLocked() + " appHasStarted: " + TwilioVoicePlugin.appHasStarted);
         if (!isLocked() && TwilioVoicePlugin.appHasStarted) {
             finish();
         } else {

@@ -17,6 +17,7 @@ import java.util.Map;
 
 import android.Manifest;
 import android.app.Activity;
+import android.app.KeyguardManager;
 import android.app.NotificationManager;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -133,6 +134,7 @@ public class TwilioVoicePlugin implements FlutterPlugin, MethodChannel.MethodCal
             switch (action) {
                 case Constants.ACTION_INCOMING_CALL:
                     handleIncomingCall(activeCallInvite.getFrom(), activeCallInvite.getTo());
+                    Log.d(TAG, "SDK >= 29 and !isAppVisible(): " + (Build.VERSION.SDK_INT >= 29 && !isAppVisible()));
                     if (Build.VERSION.SDK_INT >= 29 && !isAppVisible()) {
                         break;
                     }
@@ -146,8 +148,9 @@ public class TwilioVoicePlugin implements FlutterPlugin, MethodChannel.MethodCal
                     break;
                 case Constants.ACTION_ACCEPT:
                         int acceptOrigin = intent.getIntExtra(Constants.ACCEPT_CALL_ORIGIN,0);
-                        if(acceptOrigin == 0){
-                             Intent answerIntent = new Intent(activity, AnswerJavaActivity.class);
+                        if(acceptOrigin == 0 || isLocked()){
+                            Log.d(TAG, "Origin 0 or Device is locked. Sending to AnswerJavaActivity");
+                            Intent answerIntent = new Intent(activity, AnswerJavaActivity.class);
                             answerIntent.setAction(Constants.ACTION_ACCEPT);
                             answerIntent.putExtra(Constants.INCOMING_CALL_NOTIFICATION_ID, activeCallNotificationId);
                             answerIntent.putExtra(Constants.INCOMING_CALL_INVITE, activeCallInvite);
@@ -539,11 +542,16 @@ public class TwilioVoicePlugin implements FlutterPlugin, MethodChannel.MethodCal
      */
     private void answer() {
         Log.d(TAG, "Answering call");
-
         activeCallInvite.accept(this.activity, callListener);
         sendPhoneCallEvents("Answer|" + activeCallInvite.getFrom() + "|" + activeCallInvite.getTo() + formatCustomParams(activeCallInvite.getCustomParameters()));
         notificationManager.cancel(activeCallNotificationId);
     }
+
+    private boolean isLocked() {
+        KeyguardManager myKM = (KeyguardManager) activity.getSystemService(Context.KEYGUARD_SERVICE);
+        return myKM.inKeyguardRestrictedInputMode();
+    }
+
 
     private void sendPhoneCallEvents(String description) {
         if (eventSink == null) {
