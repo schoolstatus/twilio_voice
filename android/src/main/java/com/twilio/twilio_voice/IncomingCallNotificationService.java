@@ -344,11 +344,6 @@ public class IncomingCallNotificationService extends Service {
         }
     }
 
-    private boolean isLocked() {
-        KeyguardManager myKM = (KeyguardManager) getSystemService(Context.KEYGUARD_SERVICE);
-        return myKM.inKeyguardRestrictedInputMode();
-    }
-
     /*
      * Send the CallInvite to the VoiceActivity. Start the activity if it is not running already.
      */
@@ -362,9 +357,10 @@ public class IncomingCallNotificationService extends Service {
         pluginIntent.putExtra(Constants.INCOMING_CALL_NOTIFICATION_ID, notificationId);
         pluginIntent.putExtra(Constants.INCOMING_CALL_INVITE, callInvite);
         LocalBroadcastManager.getInstance(this).sendBroadcast(pluginIntent);
-        Log.i(TAG, "AppHasStarted && !isLocked(): " + (TwilioVoicePlugin.appHasStarted && !isLocked()) + " sdk>=29 and !isAppVisible() " + (Build.VERSION.SDK_INT >= 29 && !isAppVisible()));
-        if ((TwilioVoicePlugin.appHasStarted && !isLocked()) || (Build.VERSION.SDK_INT >= 29 && !isAppVisible())) {
+        Log.i(TAG, "AppHasStarted " + TwilioVoicePlugin.appHasStarted + " sdk>=29 and !isAppVisible() " + (Build.VERSION.SDK_INT >= 29 && !isAppVisible()));
+        if (TwilioVoicePlugin.appHasStarted || (Build.VERSION.SDK_INT >= 29 && !isAppVisible())) {            
             return;
+            
         }
         Log.i(TAG, "Starting AnswerActivity from IncomingCallNotificationService");
         startAnswerActivity(callInvite, notificationId);
