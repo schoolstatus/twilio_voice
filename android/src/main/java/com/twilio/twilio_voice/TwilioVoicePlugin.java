@@ -148,8 +148,8 @@ public class TwilioVoicePlugin implements FlutterPlugin, MethodChannel.MethodCal
                     break;
                 case Constants.ACTION_ACCEPT:
                         int acceptOrigin = intent.getIntExtra(Constants.ACCEPT_CALL_ORIGIN,0);
-                        if(acceptOrigin == 0 || isLocked()){
-                            Log.d(TAG, "Origin 0 or Device is locked. Sending to AnswerJavaActivity");
+                        if(acceptOrigin == 0){
+                            Log.d(TAG, "Origin is 0 sending to AnswerJavaActivity");
                             Intent answerIntent = new Intent(activity, AnswerJavaActivity.class);
                             answerIntent.setAction(Constants.ACTION_ACCEPT);
                             answerIntent.putExtra(Constants.INCOMING_CALL_NOTIFICATION_ID, activeCallNotificationId);
@@ -546,12 +546,6 @@ public class TwilioVoicePlugin implements FlutterPlugin, MethodChannel.MethodCal
         sendPhoneCallEvents("Answer|" + activeCallInvite.getFrom() + "|" + activeCallInvite.getTo() + formatCustomParams(activeCallInvite.getCustomParameters()));
         notificationManager.cancel(activeCallNotificationId);
     }
-
-    private boolean isLocked() {
-        KeyguardManager myKM = (KeyguardManager) activity.getSystemService(Context.KEYGUARD_SERVICE);
-        return myKM.inKeyguardRestrictedInputMode();
-    }
-
 
     private void sendPhoneCallEvents(String description) {
         if (eventSink == null) {

@@ -213,7 +213,7 @@ public class IncomingCallNotificationService extends Service {
         SoundPoolManager.getInstance(this).stopRinging();
         Log.i(TAG, "IsAppVisible: " + isAppVisible() + " Origin: " + origin);
         Intent activeCallIntent;
-        if (origin == 0 && !isAppVisible() || isLocked()) {
+        if (origin == 0 && !isAppVisible()) {
             Log.i(TAG, "Creating answerJavaActivity intent");
             activeCallIntent = new Intent(this, AnswerJavaActivity.class);
         } else {
@@ -227,8 +227,8 @@ public class IncomingCallNotificationService extends Service {
         activeCallIntent.putExtra(Constants.INCOMING_CALL_NOTIFICATION_ID, notificationId);
         activeCallIntent.putExtra(Constants.ACCEPT_CALL_ORIGIN, origin);
         activeCallIntent.setAction(Constants.ACTION_ACCEPT);
-        Log.i(TAG, "Launch IsAppVisible && !isAppVisible: " + (origin == 0 && !isAppVisible()) + " isLocked: " + isLocked());
-        if (origin == 0 && !isAppVisible() || isLocked()) {
+        Log.i(TAG, "Launch IsAppVisible && !isAppVisible: " + (origin == 0 && !isAppVisible()));
+        if (origin == 0 && !isAppVisible()) {
             startActivity(activeCallIntent);
             Log.i(TAG, "starting activity");
         } else {

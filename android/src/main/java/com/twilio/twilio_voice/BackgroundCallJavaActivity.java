@@ -167,7 +167,7 @@ public class BackgroundCallJavaActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 sendIntent(Constants.ACTION_END_CALL);
-                finish();
+                finishAndRemoveTask();
 
             }
         });
@@ -210,6 +210,7 @@ public class BackgroundCallJavaActivity extends AppCompatActivity {
 
 
     private void callCanceled() {
+        Log.d(TAG, "Call is cancelled");
         finish();
     }
 
