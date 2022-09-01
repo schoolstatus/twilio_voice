@@ -198,9 +198,12 @@ public class AnswerJavaActivity extends AppCompatActivity {
         acceptIntent.putExtra(Constants.INCOMING_CALL_NOTIFICATION_ID, activeCallNotificationId);
         Log.d(TAG, "Clicked accept startService");
         startService(acceptIntent);
-        if (!isLocked() && TwilioVoicePlugin.appHasStarted) {
+        Log.d(TAG, "isLocked: " + isLocked() + " appHasStarted: " + TwilioVoicePlugin.appHasStarted);
+        if (TwilioVoicePlugin.appHasStarted) {
+            Log.d(TAG, "AnswerJavaActivity Finish");
             finish();
-        } else {
+        }
+        else {
             Log.d(TAG, "Answering call");
             activeCallInvite.accept(this, callListener);
             notificationManager.cancel(activeCallNotificationId);
@@ -231,7 +234,7 @@ public class AnswerJavaActivity extends AppCompatActivity {
             intent.setAction(Constants.ACTION_CANCEL_CALL);
 
             this.startActivity(intent);
-            finish();
+            finishAndRemoveTask();
         }
 
     }
