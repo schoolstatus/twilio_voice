@@ -1,11 +1,15 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.twilio.twilio_voice">
 
-  <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
-  <uses-permission android:name="android.permission.DISABLE_KEYGUARD" />
-  <uses-permission android:name="android.permission.RECORD_AUDIO" />
-  <uses-permission android:name="android.permission.VIBRATE" />
-  <uses-permission android:name="android.permission.WAKE_LOCK" />
-  <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
+  <uses-feature
+    android:name="android.hardware.telephony"
+    android:required="true" />
+
+  <uses-permission android:name="android.permission.RECORD_AUDIO"/>
+  <uses-permission android:name="android.permission.MANAGE_OWN_CALLS"/>
+  <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
+  <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE"/>
+  <uses-permission android:name="android.permission.BLUETOOTH"/>
+  <uses-permission android:name="android.permission.BLUETOOTH_CONNECT"/>
   <application>
 
     <activity android:name=".AnswerJavaActivity" android:turnScreenOn="true" android:showWhenLocked="true" android:showOnLockScreen="true" android:theme="@style/Theme.AppCompat" />
@@ -15,13 +19,17 @@
         android:name=".IncomingCallNotificationActivity" android:turnScreenOn="true" android:showWhenLocked="true" android:showOnLockScreen="true" android:theme="@style/Theme.AppCompat">
     </activity>
 
-    <service android:enabled="true" android:name=".IncomingCallNotificationService"
-        android:exported="false">
+    <service
+      android:enabled="true"
+      android:name=".IncomingCallNotificationService"
+      android:foregroundServiceType="microphone"
+      android:exported="false">
       <intent-filter>
-        <action android:name="ACTION_ACCEPT" />
-        <action android:name="ACTION_REJECT" />
+          <action android:name="ACTION_ACCEPT" />
+          <action android:name="ACTION_REJECT" />
       </intent-filter>
     </service>
+
     <meta-data android:name="flutterEmbedding" android:value="2" />
   </application>
 
