@@ -8,7 +8,7 @@ buildscript {
     }
 
     dependencies {
-        classpath 'com.android.tools.build:gradle:7.3.0'
+        classpath 'com.android.tools.build:gradle:8.5.2'
     }
 }
 
@@ -23,14 +23,14 @@ apply plugin: 'com.android.library'
 
 android {
     namespace 'com.twilio.twilio_voice'
-    compileSdkVersion 32
+    compileSdkVersion 34
 
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
     }
     defaultConfig {
-        minSdkVersion 16
+        minSdkVersion 21
     }
     buildTypes {
         release {
@@ -38,11 +38,18 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
+
+    // Support for 16KB page sizes
+    packaging {
+        jniLibs {
+            useLegacyPackaging = false
+        }
+    }
 }
 
 dependencies {
-    implementation platform('com.google.firebase:firebase-bom:26.0.0')
-    implementation 'com.twilio:voice-android:5.8.0'
+    implementation platform('com.google.firebase:firebase-bom:33.0.0')
+    implementation 'com.twilio:voice-android:6.5.1'
     implementation 'com.google.firebase:firebase-messaging'
     implementation 'androidx.lifecycle:lifecycle-extensions:2.2.0'
     implementation 'androidx.constraintlayout:constraintlayout:2.0.1'
