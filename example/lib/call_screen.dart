@@ -116,7 +116,7 @@ class _CallScreenState extends State<CallScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        backgroundColor: Theme.of(context).accentColor,
+        backgroundColor: Theme.of(context).colorScheme.secondary,
         body: Container(
           child: SafeArea(
             child: Padding(
@@ -130,7 +130,7 @@ class _CallScreenState extends State<CallScreen> {
                         caller,
                         style: Theme.of(context)
                             .textTheme
-                            .headline4!
+                            .headlineMedium!
                             .copyWith(color: Colors.white),
                       ),
                       SizedBox(height: 8),
@@ -139,7 +139,7 @@ class _CallScreenState extends State<CallScreen> {
                           message!,
                           style: Theme.of(context)
                               .textTheme
-                              .headline6!
+                              .titleLarge!
                               .copyWith(color: Colors.white),
                         )
                     ],
@@ -190,7 +190,7 @@ class _CallScreenState extends State<CallScreen> {
                               border:
                                   Border.all(color: Colors.white, width: 1.0),
                               color: mute
-                                  ? Theme.of(context).accentColor
+                                  ? Theme.of(context).colorScheme.secondary
                                   : Colors.white24,
                               shape: BoxShape.circle,
                             ),
