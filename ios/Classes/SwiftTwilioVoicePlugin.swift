@@ -71,14 +71,35 @@ public class SwiftTwilioVoicePlugin: NSObject, FlutterPlugin,  FlutterStreamHand
         voipRegistry.delegate = self
         voipRegistry.desiredPushTypes = Set([PKPushType.voIP])
 
-        let appDelegate = UIApplication.shared.delegate
-        guard let controller = appDelegate?.window??.rootViewController as? FlutterViewController else {
-            fatalError("rootViewController is not type FlutterViewController")
+        // UIScene-compatible way to get FlutterViewController
+        // Try UIScene first, then fall back to AppDelegate for backward compatibility
+        var controller: FlutterViewController?
+        
+        if #available(iOS 13.0, *) {
+            // For UIScene-based apps (Flutter 3.41+)
+            if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+               let window = windowScene.windows.first,
+               let rootVC = window.rootViewController as? FlutterViewController {
+                controller = rootVC
+            }
         }
-        let registrar = controller.registrar(forPlugin: "twilio_voice")
-        if let unwrappedRegistrar = registrar {
-            let eventChannel = FlutterEventChannel(name: "twilio_voice/events", binaryMessenger: unwrappedRegistrar.messenger())
-            eventChannel.setStreamHandler(self)
+        
+        // Fallback for older apps without UIScene
+        if controller == nil {
+            if let appDelegate = UIApplication.shared.delegate,
+               let window = appDelegate.window,
+               let rootVC = window?.rootViewController as? FlutterViewController {
+                controller = rootVC
+            }
+        }
+        
+        // Event channel setup will happen in register(with:) if controller not available yet
+        if let flutterController = controller {
+            let registrar = flutterController.registrar(forPlugin: "twilio_voice")
+            if let unwrappedRegistrar = registrar {
+                let eventChannel = FlutterEventChannel(name: "twilio_voice/events", binaryMessenger: unwrappedRegistrar.messenger())
+                eventChannel.setStreamHandler(self)
+            }
         }
     }
     
