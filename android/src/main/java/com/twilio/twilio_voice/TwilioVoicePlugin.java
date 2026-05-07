@@ -35,7 +35,6 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.lifecycle.Lifecycle;
 import androidx.lifecycle.ProcessLifecycleOwner;
-import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 import org.json.JSONObject;
 
@@ -246,15 +245,18 @@ public class TwilioVoicePlugin implements FlutterPlugin, MethodChannel.MethodCal
             intentFilter.addAction(Constants.ACTION_END_CALL);
             intentFilter.addAction(Constants.ACTION_TOGGLE_MUTE);
             intentFilter.addAction(Constants.ACTION_RETURN_CALL);
-            LocalBroadcastManager.getInstance(this.activity).registerReceiver(
-                    voiceBroadcastReceiver, intentFilter);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                this.activity.registerReceiver(voiceBroadcastReceiver, intentFilter, Context.RECEIVER_NOT_EXPORTED);
+            } else {
+                this.activity.registerReceiver(voiceBroadcastReceiver, intentFilter);
+            }
             isReceiverRegistered = true;
         }
     }
 
     private void unregisterReceiver() {
         if (isReceiverRegistered) {
-            LocalBroadcastManager.getInstance(activity).unregisterReceiver(voiceBroadcastReceiver);
+            activity.unregisterReceiver(voiceBroadcastReceiver);
             isReceiverRegistered = false;
         }
     }

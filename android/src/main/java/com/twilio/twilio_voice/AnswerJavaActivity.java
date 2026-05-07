@@ -24,7 +24,6 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
-import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 import com.twilio.voice.Call;
 import com.twilio.voice.CallException;
@@ -320,8 +319,11 @@ public class AnswerJavaActivity extends AppCompatActivity {
             intentFilter.addAction(Constants.ACTION_TOGGLE_MUTE);
             intentFilter.addAction(Constants.ACTION_CANCEL_CALL);
             intentFilter.addAction(Constants.ACTION_END_CALL);
-            LocalBroadcastManager.getInstance(this).registerReceiver(
-                    voiceBroadcastReceiver, intentFilter);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                registerReceiver(voiceBroadcastReceiver, intentFilter, Context.RECEIVER_NOT_EXPORTED);
+            } else {
+                registerReceiver(voiceBroadcastReceiver, intentFilter);
+            }
             isReceiverRegistered = true;
         }
     }
@@ -329,7 +331,7 @@ public class AnswerJavaActivity extends AppCompatActivity {
     private void unregisterReceiver() {
         Log.d(TAG, "Unregistering receiver");
         if (isReceiverRegistered) {
-            LocalBroadcastManager.getInstance(this).unregisterReceiver(voiceBroadcastReceiver);
+            unregisterReceiver(voiceBroadcastReceiver);
             isReceiverRegistered = false;
         }
     }

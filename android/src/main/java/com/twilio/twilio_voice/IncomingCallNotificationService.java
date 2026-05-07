@@ -21,7 +21,6 @@ import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
 import androidx.lifecycle.Lifecycle;
 import androidx.lifecycle.ProcessLifecycleOwner;
-import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 import com.twilio.voice.CallInvite;
 import com.twilio.voice.CancelledCallInvite;
@@ -232,7 +231,8 @@ public class IncomingCallNotificationService extends Service {
             startActivity(activeCallIntent);
             Log.i(TAG, "starting activity");
         } else {
-            LocalBroadcastManager.getInstance(this).sendBroadcast(activeCallIntent);
+            activeCallIntent.setPackage(getPackageName());
+            sendBroadcast(activeCallIntent);
             Log.i(TAG, "sending broadcast intent");
         }
     }
@@ -246,7 +246,8 @@ public class IncomingCallNotificationService extends Service {
         rejectCallIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         rejectCallIntent.putExtra(Constants.INCOMING_CALL_INVITE, callInvite);
         rejectCallIntent.setAction(Constants.ACTION_REJECT);
-        LocalBroadcastManager.getInstance(this).sendBroadcast(rejectCallIntent);
+        rejectCallIntent.setPackage(getPackageName());
+        sendBroadcast(rejectCallIntent);
         endForeground();
     }
 
@@ -259,13 +260,15 @@ public class IncomingCallNotificationService extends Service {
             buildMissedCallNotification(cancelledCallInvite.getFrom(), cancelledCallInvite.getTo());
         }
         endForeground();
-        LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
+        intent.setPackage(getPackageName());
+        sendBroadcast(intent);
     }
 
     private void returnCall(Intent intent) {
         endForeground();
         Log.i(TAG, "returning call!!!!");
-        LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
+        intent.setPackage(getPackageName());
+        sendBroadcast(intent);
         NotificationManagerCompat notificationManager = NotificationManagerCompat.from(this);
         notificationManager.cancel(100);
     }
@@ -356,7 +359,8 @@ public class IncomingCallNotificationService extends Service {
         pluginIntent.setAction(Constants.ACTION_INCOMING_CALL);
         pluginIntent.putExtra(Constants.INCOMING_CALL_NOTIFICATION_ID, notificationId);
         pluginIntent.putExtra(Constants.INCOMING_CALL_INVITE, callInvite);
-        LocalBroadcastManager.getInstance(this).sendBroadcast(pluginIntent);
+        pluginIntent.setPackage(getPackageName());
+        sendBroadcast(pluginIntent);
         Log.i(TAG, "AppHasStarted " + TwilioVoicePlugin.appHasStarted + " sdk>=29 and !isAppVisible() " + (Build.VERSION.SDK_INT >= 29 && !isAppVisible()));
         if (TwilioVoicePlugin.appHasStarted || (Build.VERSION.SDK_INT >= 29 && !isAppVisible())) {            
             return;
