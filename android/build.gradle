@@ -23,14 +23,14 @@ apply plugin: 'com.android.library'
 
 android {
     namespace 'com.twilio.twilio_voice'
-    compileSdkVersion 34
+    compileSdkVersion 35
 
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
     }
     defaultConfig {
-        minSdkVersion 21
+        minSdkVersion 26
     }
     buildTypes {
         release {
@@ -49,7 +49,7 @@ android {
 
 dependencies {
     implementation platform('com.google.firebase:firebase-bom:33.0.0')
-    implementation 'com.twilio:voice-android:6.5.1'
+    implementation 'com.twilio:voice-android:6.10.2'
     implementation 'com.google.firebase:firebase-messaging'
     implementation 'androidx.lifecycle:lifecycle-extensions:2.2.0'
     implementation 'androidx.constraintlayout:constraintlayout:2.0.1'
