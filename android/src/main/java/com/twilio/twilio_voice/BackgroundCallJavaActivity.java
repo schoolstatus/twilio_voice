@@ -25,7 +25,6 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.lifecycle.Lifecycle;
 import androidx.lifecycle.ProcessLifecycleOwner;
-import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 //import com.twilio.voice.Call;
 import com.twilio.voice.CallInvite;
@@ -205,7 +204,8 @@ public class BackgroundCallJavaActivity extends AppCompatActivity {
         activeCallIntent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
         activeCallIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         activeCallIntent.setAction(action);
-        LocalBroadcastManager.getInstance(this).sendBroadcast(activeCallIntent);
+        activeCallIntent.setPackage(getPackageName());
+        sendBroadcast(activeCallIntent);
     }
 
 

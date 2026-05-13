@@ -8,15 +8,8 @@ import android.content.SharedPreferences;
 import android.os.Handler;
 import android.os.Process;
 import android.util.Log;
-import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import com.google.firebase.messaging.FirebaseMessagingService;
 import com.google.firebase.messaging.RemoteMessage;
-import io.flutter.plugin.common.MethodChannel;
-import io.flutter.plugin.common.PluginRegistry;
-import io.flutter.view.FlutterCallbackInformation;
-import io.flutter.view.FlutterMain;
-import io.flutter.view.FlutterNativeView;
-import io.flutter.view.FlutterRunArguments;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -50,7 +43,8 @@ public class VoiceFirebaseMessagingService extends FirebaseMessagingService {
     public void onNewToken(@NonNull String token) {
         Intent onMessageIntent = new Intent(ACTION_TOKEN);
         onMessageIntent.putExtra(EXTRA_TOKEN, token);
-        LocalBroadcastManager.getInstance(getApplicationContext()).sendBroadcast(onMessageIntent);
+        onMessageIntent.setPackage(getApplicationContext().getPackageName());
+        getApplicationContext().sendBroadcast(onMessageIntent);
     }
 
     /**

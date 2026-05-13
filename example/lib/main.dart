@@ -107,7 +107,7 @@ class _DialScreenState extends State<DialScreen> with WidgetsBindingObserver {
 
     super.initState();
     waitForCall();
-    WidgetsBinding.instance!.addObserver(this);
+    WidgetsBinding.instance.addObserver(this);
 
     final partnerId = "alicesId";
     TwilioVoice.instance.registerClient(partnerId, "Alice");
@@ -155,7 +155,7 @@ class _DialScreenState extends State<DialScreen> with WidgetsBindingObserver {
             break;
           case CallEvent.declined:
             final activeCall = TwilioVoice.instance.call.activeCall;
-            if(activeCall != null) {
+            if (activeCall != null) {
               TwilioVoice.instance.call.hangUp().then((value) {
                 hasPushedToCall = false;
               });
@@ -200,7 +200,7 @@ class _DialScreenState extends State<DialScreen> with WidgetsBindingObserver {
 
   @override
   void dispose() {
-    WidgetsBinding.instance!.removeObserver(this);
+    WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
 

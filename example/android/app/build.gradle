@@ -26,13 +26,13 @@ apply plugin: 'com.google.gms.google-services'
 apply from: "$flutterRoot/packages/flutter_tools/gradle/flutter.gradle"
 
 android {
-    compileSdkVersion 31
+    namespace "com.twilio.twilio_voice_example"
+    compileSdkVersion 34
 
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId "com.twilio.twilio_voice_example"
-        minSdkVersion 16
-        targetSdkVersion 31
+        minSdkVersion 21
+        targetSdkVersion 34
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName
     }
@@ -49,10 +49,17 @@ android {
             proguardFiles getDefaultProguardFile(
                     'proguard-android-optimize.txt'),
                     'proguard-rules.pro'
-            
+
             ndk {
                 abiFilters 'armeabi-v7a', 'arm64-v8a', 'x86_64'
             }
+        }
+    }
+    
+    // Support for 16KB page sizes
+    packaging {
+        jniLibs {
+            useLegacyPackaging = false
         }
     }
 }
