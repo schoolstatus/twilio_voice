@@ -11,6 +11,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.ApplicationInfo;
+import android.content.pm.ServiceInfo;
 import android.graphics.Color;
 import android.os.Build;
 import android.os.Bundle;
@@ -29,6 +30,9 @@ public class IncomingCallNotificationService extends Service {
 
     private static final String TAG = IncomingCallNotificationService.class.getSimpleName();
     public static final String TwilioPreferences = "com.twilio.twilio_voicePreferences";
+
+    // Set when the invite notification had to be posted without a foreground service
+    private int fallbackNotificationId = 0;
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
@@ -334,16 +338,35 @@ public class IncomingCallNotificationService extends Service {
 
     private void endForeground() {
         stopForeground(true);
+        if (fallbackNotificationId != 0) {
+            NotificationManagerCompat.from(this).cancel(fallbackNotificationId);
+            fallbackNotificationId = 0;
+        }
     }
 
     @TargetApi(Build.VERSION_CODES.O)
     private void setCallInProgressNotification(CallInvite callInvite, int notificationId) {
+        Notification notification;
         if (isAppVisible()) {
             Log.i(TAG, "setCallInProgressNotification - app is visible.");
-            startForeground(notificationId, createNotification(callInvite, notificationId, NotificationManager.IMPORTANCE_LOW));
+            notification = createNotification(callInvite, notificationId, NotificationManager.IMPORTANCE_LOW);
         } else {
             Log.i(TAG, "setCallInProgressNotification - app is NOT visible.");
-            startForeground(notificationId, createNotification(callInvite, notificationId, NotificationManager.IMPORTANCE_HIGH));
+            notification = createNotification(callInvite, notificationId, NotificationManager.IMPORTANCE_HIGH);
+        }
+        // Ringing does not need the microphone. A microphone-type foreground service cannot be
+        // started from the background on Android 14+ (SecurityException), so use phoneCall.
+        // The microphone service (ActiveCallService) is started once the call is answered.
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                startForeground(notificationId, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_PHONE_CALL);
+            } else {
+                startForeground(notificationId, notification);
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Unable to start incoming call foreground service, posting notification instead", e);
+            NotificationManagerCompat.from(this).notify(notificationId, notification);
+            fallbackNotificationId = notificationId;
         }
     }
 

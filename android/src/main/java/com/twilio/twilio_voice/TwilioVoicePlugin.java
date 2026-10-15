@@ -24,8 +24,6 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
-import android.media.AudioAttributes;
-import android.media.AudioFocusRequest;
 import android.media.AudioManager;
 import android.os.Build;
 import android.util.Log;
@@ -62,7 +60,6 @@ public class TwilioVoicePlugin implements FlutterPlugin, MethodChannel.MethodCal
 
     private String accessToken;
     private AudioManager audioManager;
-    private int savedAudioMode = AudioManager.MODE_INVALID;
     private int savedVolumeControlStream;
 
     private boolean isReceiverRegistered = false;
@@ -185,6 +182,7 @@ public class TwilioVoicePlugin implements FlutterPlugin, MethodChannel.MethodCal
                                 .params(params)
                                 .build();
                         this.activeCall = Voice.connect(this.activity, connectOptions, this.callListener);
+                        CallSession.start(context, this.activeCall, displayNameFor(to));
                     }
                     break;
                 default:
@@ -364,6 +362,7 @@ public class TwilioVoicePlugin implements FlutterPlugin, MethodChannel.MethodCal
         methodChannel = null;
         eventChannel.setStreamHandler(null);
         eventChannel = null;
+        eventSink = null;
         appHasStarted = false;
     }
 
@@ -406,7 +405,7 @@ public class TwilioVoicePlugin implements FlutterPlugin, MethodChannel.MethodCal
 
             boolean speakerIsOn = call.argument("speakerIsOn");
             // if(speakerIsOn == null) return;
-            audioManager.setSpeakerphoneOn(speakerIsOn);
+            CallSession.setSpeakerOn(context, speakerIsOn);
             sendPhoneCallEvents(speakerIsOn ? "Speaker On" : "Speaker Off");
 
             result.success(true);
@@ -450,6 +449,7 @@ public class TwilioVoicePlugin implements FlutterPlugin, MethodChannel.MethodCal
                     .build();
             Log.d(TAG, "calling to " + call.argument("To").toString());
             this.activeCall = Voice.connect(this.activity, connectOptions, this.callListener);
+            CallSession.start(context, this.activeCall, call.argument("To").toString());
             result.success(true);
         } else if (call.method.equals("registerClient")) {
             String id = call.argument("id");
@@ -543,9 +543,18 @@ public class TwilioVoicePlugin implements FlutterPlugin, MethodChannel.MethodCal
      */
     private void answer() {
         Log.d(TAG, "Answering call");
-        activeCallInvite.accept(this.activity, callListener);
+        Call call = activeCallInvite.accept(this.activity, callListener);
+        CallSession.start(context, call, displayNameFor(activeCallInvite.getFrom()));
         sendPhoneCallEvents("Answer|" + activeCallInvite.getFrom() + "|" + activeCallInvite.getTo() + formatCustomParams(activeCallInvite.getCustomParameters()));
         notificationManager.cancel(activeCallNotificationId);
+    }
+
+    private String displayNameFor(String identity) {
+        if (identity == null) {
+            return null;
+        }
+        String id = identity.replace("client:", "");
+        return pSharedPref.getString(id, pSharedPref.getString("defaultCaller", null));
     }
 
     private void sendPhoneCallEvents(String description) {
@@ -616,7 +625,7 @@ public class TwilioVoicePlugin implements FlutterPlugin, MethodChannel.MethodCal
 
             @Override
             public void onConnectFailure(Call call, CallException error) {
-                // setAudioFocus(false);
+                CallSession.end();
                 Log.d(TAG, "Connect failure");
                 String message = String.format("Call Error: %d, %s", error.getErrorCode(), error.getMessage());
                 Log.e(TAG, message);
@@ -626,15 +635,16 @@ public class TwilioVoicePlugin implements FlutterPlugin, MethodChannel.MethodCal
 
             @Override
             public void onConnected(Call call) {
-                // setAudioFocus(true);
                 Log.d(TAG, "onConnected");
 //                eventSink.success("LOG|Connected");
                 activeCall = call;
                 /*
                  * Enable changing the volume using the up/down keys during a conversation
                  */
-                savedVolumeControlStream = activity.getVolumeControlStream();
-                activity.setVolumeControlStream(AudioManager.STREAM_VOICE_CALL);
+                if (activity != null) {
+                    savedVolumeControlStream = activity.getVolumeControlStream();
+                    activity.setVolumeControlStream(AudioManager.STREAM_VOICE_CALL);
+                }
                 sendPhoneCallEvents("Connected|" + call.getFrom() + "|" + call.getTo() + "|" + (callOutgoing ? "Outgoing" : "Incoming"));
             }
 
@@ -650,13 +660,16 @@ public class TwilioVoicePlugin implements FlutterPlugin, MethodChannel.MethodCal
 
             @Override
             public void onDisconnected(Call call, CallException error) {
-                // setAudioFocus(false);
+                CallSession.end();
                 Log.d(TAG, "Disconnected");
                 if (error != null) {
                     String message = String.format("Call Error: %d, %s", error.getErrorCode(), error.getMessage());
                     Log.e(TAG, message);
                 }
-                activity.setVolumeControlStream(savedVolumeControlStream);
+                // activity/context are null if the call outlived the Flutter UI
+                if (activity != null) {
+                    activity.setVolumeControlStream(savedVolumeControlStream);
+                }
                 sendPhoneCallEvents("Call Ended");
                 disconnected();
             }
@@ -668,6 +681,7 @@ public class TwilioVoicePlugin implements FlutterPlugin, MethodChannel.MethodCal
         if (activeCall != null) {
             activeCall.disconnect();
             disconnected();
+            CallSession.end();
         }
     }
 
@@ -675,7 +689,7 @@ public class TwilioVoicePlugin implements FlutterPlugin, MethodChannel.MethodCal
 
         if (activeCall == null) return;
 
-        if (backgroundCallUI) {
+        if (backgroundCallUI && activity != null) {
             Intent intent = new Intent(activity, BackgroundCallJavaActivity.class);
             intent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
 
@@ -684,7 +698,9 @@ public class TwilioVoicePlugin implements FlutterPlugin, MethodChannel.MethodCal
 
             activity.startActivity(intent);
         }
-        SoundPoolManager.getInstance(context).playDisconnect();
+        if (context != null) {
+            SoundPoolManager.getInstance(context).playDisconnect();
+        }
         backgroundCallUI = false;
         callOutgoing = false;
         activeCall = null;
@@ -703,52 +719,6 @@ public class TwilioVoicePlugin implements FlutterPlugin, MethodChannel.MethodCal
         if (activeCall != null) {
             activeCall.mute(muted);
             sendPhoneCallEvents(muted ? "Mute" : "Unmute");
-        }
-    }
-
-    private void setAudioFocus(boolean setFocus) {
-        if (audioManager != null) {
-            if (setFocus) {
-                savedAudioMode = audioManager.getMode();
-                // Request audio focus before making any device switch.
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                    AudioAttributes playbackAttributes = new AudioAttributes.Builder()
-                            .setUsage(AudioAttributes.USAGE_VOICE_COMMUNICATION)
-                            .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
-                            .build();
-                    AudioFocusRequest focusRequest = new AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT)
-                            .setAudioAttributes(playbackAttributes)
-                            .setAcceptsDelayedFocusGain(true)
-                            .setOnAudioFocusChangeListener(new AudioManager.OnAudioFocusChangeListener() {
-                                @Override
-                                public void onAudioFocusChange(int i) {
-                                }
-                            })
-                            .build();
-                    audioManager.requestAudioFocus(focusRequest);
-                } else {
-                    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.FROYO) {
-                        int focusRequestResult = audioManager.requestAudioFocus(
-                                new AudioManager.OnAudioFocusChangeListener() {
-
-                                    @Override
-                                    public void onAudioFocusChange(int focusChange) {
-                                    }
-                                }, AudioManager.STREAM_VOICE_CALL,
-                                AudioManager.AUDIOFOCUS_GAIN_TRANSIENT);
-                    }
-                }
-                /*
-                 * Start by setting MODE_IN_COMMUNICATION as default audio mode. It is
-                 * required to be in this mode when playout and/or recording starts for
-                 * best possible VoIP performance. Some devices have difficulties with speaker mode
-                 * if this is not set.
-                 */
-                audioManager.setMode(AudioManager.MODE_IN_COMMUNICATION);
-            } else {
-                audioManager.setMode(savedAudioMode);
-                audioManager.abandonAudioFocus(null);
-            }
         }
     }
 

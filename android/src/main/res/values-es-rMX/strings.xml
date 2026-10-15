@@ -8,4 +8,7 @@
     <string name="notification_missed_call">Llamada perdida de %s</string>
     <string name="twilio_call_back">Llamar</string>
     <string name="connected_status">Conectado</string>
+    <string name="call_in_progress">Llamada en curso</string>
+    <string name="hang_up">Colgar</string>
+    <string name="active_call_channel_name">Llamadas activas</string>
 </resources>
