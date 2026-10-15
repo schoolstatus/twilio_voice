@@ -8,7 +8,6 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.content.res.ColorStateList;
-import android.media.AudioManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.PowerManager;
@@ -93,7 +92,6 @@ public class BackgroundCallJavaActivity extends AppCompatActivity {
 
             
             if (intent.getStringExtra(Constants.CALL_FROM) != null) {
-                activateSensor();
                 String fromId = intent.getStringExtra(Constants.CALL_FROM).replace("client:", "");
 
                 SharedPreferences preferences = getApplicationContext().getSharedPreferences(TwilioPreferences, Context.MODE_PRIVATE);
@@ -112,18 +110,7 @@ public class BackgroundCallJavaActivity extends AppCompatActivity {
         }
     }
 
-    private void activateSensor() {
-        if (wakeLock == null) {
-            Log.d(TAG, "New wakeLog");
-            wakeLock = powerManager.newWakeLock(PowerManager.PROXIMITY_SCREEN_OFF_WAKE_LOCK, "incall");
-        }
-        if (!wakeLock.isHeld()) {
-            Log.d(TAG, "wakeLog acquire");
-            wakeLock.acquire();
-        } 
-    }
-
-    private void deactivateSensor() {
+    private void releaseWakeLock() {
         if (wakeLock != null && wakeLock.isHeld()) {
             Log.d(TAG, "wakeLog release");
             wakeLock.release();
@@ -173,9 +160,8 @@ public class BackgroundCallJavaActivity extends AppCompatActivity {
         btnOutput.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                AudioManager audioManager = (AudioManager) getApplicationContext().getSystemService(Context.AUDIO_SERVICE);
-                boolean isOnSpeaker = !audioManager.isSpeakerphoneOn();
-                audioManager.setSpeakerphoneOn(isOnSpeaker);
+                boolean isOnSpeaker = !CallSession.isSpeakerOn();
+                CallSession.setSpeakerOn(BackgroundCallJavaActivity.this, isOnSpeaker);
                 applyFabState(btnOutput, isOnSpeaker);
             }
         });
@@ -218,7 +204,7 @@ public class BackgroundCallJavaActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        deactivateSensor();
+        releaseWakeLock();
     }
 
 }

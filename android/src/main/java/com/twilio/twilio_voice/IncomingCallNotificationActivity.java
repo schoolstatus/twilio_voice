@@ -22,8 +22,11 @@ public class IncomingCallNotificationActivity extends AppCompatActivity {
         newIntent.setAction(action);
         newIntent.putExtras(srcIntent);
 
-        Log.d(TAG, "startForegroundService");
-        startForegroundService(newIntent);
+        // This activity is in the foreground, so a plain startService is allowed. The accept
+        // path never calls startForeground(), so startForegroundService() would crash the app
+        // if the service was not already in the foreground.
+        Log.d(TAG, "startService");
+        startService(newIntent);
 
         Log.d(TAG, "Finish");
         finish();

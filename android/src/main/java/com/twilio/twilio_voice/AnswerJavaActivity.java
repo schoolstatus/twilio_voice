@@ -150,14 +150,17 @@ public class AnswerJavaActivity extends AppCompatActivity {
     }
 
 
+    private String callerName() {
+        String fromId = activeCallInvite.getFrom().replace("client:", "");
+        SharedPreferences preferences = getApplicationContext().getSharedPreferences(TwilioPreferences, Context.MODE_PRIVATE);
+        return preferences.getString(fromId, preferences.getString("defaultCaller", getString(R.string.unknown_caller)));
+    }
+
     private void configCallUI() {
         Log.d(TAG, "configCallUI");
         if (activeCallInvite != null) {
 
-            String fromId = activeCallInvite.getFrom().replace("client:", "");
-            SharedPreferences preferences = getApplicationContext().getSharedPreferences(TwilioPreferences, Context.MODE_PRIVATE);
-            String caller = preferences.getString(fromId, preferences.getString("defaultCaller", getString(R.string.unknown_caller)));
-            tvUserName.setText(caller);
+            tvUserName.setText(callerName());
 
             btnAnswer.setOnClickListener(new View.OnClickListener() {
                 @Override
@@ -204,7 +207,8 @@ public class AnswerJavaActivity extends AppCompatActivity {
         }
         else {
             Log.d(TAG, "Answering call");
-            activeCallInvite.accept(this, callListener);
+            Call call = activeCallInvite.accept(this, callListener);
+            CallSession.start(this, call, callerName());
             notificationManager.cancel(activeCallNotificationId);
         }
     }
@@ -246,6 +250,7 @@ public class AnswerJavaActivity extends AppCompatActivity {
 
             @Override
             public void onConnectFailure(@NonNull Call call, @NonNull CallException error) {
+                CallSession.end();
                 Log.d(TAG, "Connect failure");
                 Log.e(TAG, "Call Error: %d, %s" + error.getErrorCode() + error.getMessage());
             }
@@ -276,6 +281,7 @@ public class AnswerJavaActivity extends AppCompatActivity {
 
             @Override
             public void onDisconnected(@NonNull Call call, CallException error) {
+                CallSession.end();
                 if (!TwilioVoicePlugin.appHasStarted) {
                     Log.d(TAG, "Disconnected");
                     endCall();
